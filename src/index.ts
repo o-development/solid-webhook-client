@@ -6,7 +6,7 @@ import { IncomingMessage } from "http";
  * @param options
  */
 export function subscribe(
-  resourceUri,
+  resourceUri: string,
   options?: {
     authenticatedFetch?: (
       input: RequestInfo,
