@@ -1,6 +1,7 @@
 {
   "name": "solid-webhook-client",
   "version": "0.0.0",
+  "type": "module",
   "description": "Webhook Client for Solid Servers",
   "main": "dist/index.js",
   "scripts": {
@@ -36,5 +37,8 @@
     "typedoc": "^0.22.10",
     "typedoc-plugin-markdown": "^3.11.7",
     "typescript": "^4.5.2"
+  },
+  "dependencies": {
+    "cross-fetch": "^3.1.4"
   }
 }

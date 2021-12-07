@@ -1,14 +1,26 @@
 import { subscribe, unsubscribe, parseIncomingRequest } from "../src";
-import express from "express";
+import path from "path";
+import express, { Request, Response } from "express";
 import {
   getSessionFromStorage,
-  getSessionIdFromStorageAll,
   Session,
 } from "@inrupt/solid-client-authn-node";
 import cookieSession from "cookie-session";
+import bodyParser from "body-parser";
+
+const PORT = 3001;
+const LOCAL_ORIGIN = `http://localhost:${PORT}`;
+const POD_ORIGIN = `http://localhost:3000`;
+const RESOURCE_NAME = "test.ttl";
+const RESOURCE_CONTAINER = "/jackson/profile/";
+const RESOURCE_PATH = `${RESOURCE_CONTAINER}${RESOURCE_NAME}`;
 
 const app = express();
 app.use(cookieSession({ keys: ["tempKey"], secure: false }));
+
+app.get("/", (req, res) => {
+  renderDashboard(res);
+});
 
 // Step 1: Login using Inrupt's client library.
 // This is a simplified version of what's required. Go
@@ -19,8 +31,8 @@ app.get("/login", async (req, res) => {
     const authSession = new Session();
     req.session.sessionId = authSession.info.sessionId;
     await authSession.login({
-      redirectUrl: `http://localhost:3001/login-redirect`,
-      oidcIssuer: "http://localhost:3000",
+      redirectUrl: `${LOCAL_ORIGIN}/login-redirect`,
+      oidcIssuer: POD_ORIGIN,
       clientName: "Webhook Demo app",
       handleRedirect: (redirectUrl) => {
         res.redirect(redirectUrl);
@@ -35,38 +47,79 @@ app.get("/login", async (req, res) => {
 // this route. Once the user is properly authenticated, you can call
 // "subscribe" to subscribe to a webhook.
 app.get("/login-redirect", async (req, res) => {
-  if (req.session && typeof req.session.sessionId === "string") {
-    const authSession = await getSessionFromStorage(req.session.sessionId);
-    if (authSession) {
-      await authSession.handleIncomingRedirect(
-        `http://localhost:3001${req.url}`
-      );
-    }
-    res.sendStatus(200);
-
-    // Start the subscription v----------------------
-  } else {
-    res.sendStatus(500);
-  }
+  const authSession = await getAuthSession(req);
+  await authSession.handleIncomingRedirect(`${LOCAL_ORIGIN}${req.url}`);
+  renderDashboard(res);
 });
 
-app.get("/webhook", async (req, res) => {
-  const parsedData = await parseIncomingRequest(req);
+app.get("/create", async (req, res) => {
+  const authSession = await getAuthSession(req);
+  await authSession.fetch(`${POD_ORIGIN}${RESOURCE_CONTAINER}`, {
+    method: "post",
+    headers: {
+      "content-type": "text/turtle",
+      slug: RESOURCE_NAME,
+      link: `http://www.w3.org/ns/ldp#Resource; rel="type"`,
+    },
+    body: "<http://example.org/#spiderman> <http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/#green-goblin> .",
+  });
+  console.log("Created Document");
+  renderDashboard(res);
+});
 
-  /*
-    Logs:
-    {
-      object: "https://example.pod/resource1",
-      type: "update",
-      unsubscribeEndpoint: "https://example.pod/unsubscribe/e0f3fca0-cb35-4c20-8437-72f35"
-    }
-  */
-  console.log(parsedData);
+app.get("/subscribe", async (req, res) => {
+  const authSession = await getAuthSession(req);
+  const unsubscribeEndpoint = await subscribe(
+    `${POD_ORIGIN}${RESOURCE_CONTAINER}`,
+    `${LOCAL_ORIGIN}/webhook`,
+    { authenticatedFetch: authSession.fetch }
+  );
+  console.log("Subscribed to Resource");
+  renderDashboard(res);
+});
 
-  // Unsubscribe from the webhook
-  await unsubscribe(parsedData.unsubscribeEndpoint);
+app.get("/update", async (req, res) => {
+  const authSession = await getAuthSession(req);
+  await authSession.fetch(`${POD_ORIGIN}${RESOURCE_PATH}`, {
+    method: "patch",
+    headers: {
+      "content-type": "application/sparql-update",
+    },
+    body: "INSERT DATA { <http://example.org/#spiderman> <http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/#electro> . }",
+  });
+  console.log("Updated Document");
+  renderDashboard(res);
+});
 
-  res.send();
+app.get("/delete", async (req, res) => {
+  const authSession = await getAuthSession(req);
+  await authSession.fetch(`${POD_ORIGIN}${RESOURCE_PATH}`, {
+    method: "delete",
+  });
+  console.log("Deleted Document");
+  renderDashboard(res);
+});
+
+// When a change happens to the file, this route will be called
+app.post("/webhook", bodyParser.json(), async (req, res) => {
+  console.log("Webhook request");
+  console.log(req.body);
+  // const parsedData = await parseIncomingRequest(req);
+
+  // /*
+  //   Logs:
+  //   {
+  //     object: "https://example.pod/resource1",
+  //     type: "update",
+  //     unsubscribeEndpoint: "https://example.pod/unsubscribe/e0f3fca0-cb35-4c20-8437-72f35"
+  //   }
+  // */
+  // console.log(parsedData);
+
+  // // Unsubscribe from the webhook
+  // await unsubscribe(parsedData.unsubscribeEndpoint);
+
+  res.sendStatus(200);
 });
 
 app.listen(3001, () => {
@@ -74,3 +127,21 @@ app.listen(3001, () => {
   // Create the webhook subscription
   // subscribe("https://example.pod/resource1");
 });
+
+function renderDashboard(res: Response): void {
+  res.sendFile("./dashboard.html", {
+    root: path.join(__dirname),
+  });
+}
+
+async function getAuthSession(req: Request): Promise<Session> {
+  if (req.session && req.session.sessionId) {
+    const authSession = await getSessionFromStorage(req.session.sessionId);
+    if (!authSession) {
+      throw new Error("No session available");
+    }
+    return authSession;
+  } else {
+    throw new Error("No session available");
+  }
+}
