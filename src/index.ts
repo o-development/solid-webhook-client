@@ -1,4 +1,4 @@
-import { IncomingMessage } from "http";
+// import { IncomingMessage } from "http";
 import crossFetch from "cross-fetch";
 import { URL } from "url";
 
@@ -78,17 +78,32 @@ export async function subscribe(
 /**
  * Unsubscribe from a resource
  */
-export function unsubscribe(unsubscribeEndpoint: string): Promise<void> {
-  throw new Error("Not Implemented");
+export async function unsubscribe(
+  unsubscribeEndpoint: string,
+  options?: {
+    authenticatedFetch?: (
+      input: RequestInfo,
+      init?: RequestInit
+    ) => Promise<Response>;
+  }
+): Promise<void> {
+  const fetch = options?.authenticatedFetch || crossFetch;
+  const responseText = await (
+    await fetch(unsubscribeEndpoint, { method: "DELETE" })
+  ).text();
+  console.log("Update Response");
+  console.log(responseText);
 }
 
 /**
  * Parses the incoming webhook request
  */
-export function parseIncomingRequest(request: IncomingMessage): Promise<{
-  object: string;
-  type: "Update" | "Delete";
-  unsubscribeEndpoint: string;
-}> {
-  throw new Error("Not Implemented");
-}
+// export function parseIncomingRequest(request: IncomingMessage): Promise<{
+//   object: string;
+//   type: "Update" | "Delete";
+//   unsubscribeEndpoint: string;
+// }> {
+//   if () {
+
+//   }
+// }

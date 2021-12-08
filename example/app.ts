@@ -1,4 +1,4 @@
-import { subscribe, unsubscribe, parseIncomingRequest } from "../src";
+import { subscribe, unsubscribe } from "../src";
 import path from "path";
 import express, { Request, Response } from "express";
 import {
@@ -21,6 +21,8 @@ app.use(cookieSession({ keys: ["tempKey"], secure: false }));
 app.get("/", (req, res) => {
   renderDashboard(res);
 });
+
+let unsubscribeUris: string[] = [];
 
 // Step 1: Login using Inrupt's client library.
 // This is a simplified version of what's required. Go
@@ -69,11 +71,12 @@ app.get("/create", async (req, res) => {
 
 app.get("/subscribe", async (req, res) => {
   const authSession = await getAuthSession(req);
-  const unsubscribeEndpoint = await subscribe(
+  const { unsubscribeEndpoint } = await subscribe(
     `${POD_ORIGIN}${RESOURCE_CONTAINER}`,
     `${LOCAL_ORIGIN}/webhook`,
     { authenticatedFetch: authSession.fetch }
   );
+  unsubscribeUris.push(unsubscribeEndpoint);
   console.log("Subscribed to Resource");
   renderDashboard(res);
 });
@@ -97,6 +100,22 @@ app.get("/delete", async (req, res) => {
     method: "delete",
   });
   console.log("Deleted Document");
+  renderDashboard(res);
+});
+
+app.get("/unsubscribe", async (req, res) => {
+  const authSession = await getAuthSession(req);
+  console.log("Unsubscribe");
+  console.log(unsubscribeUris);
+  await Promise.all(
+    unsubscribeUris.map(async (unsubscribeUri) => {
+      await unsubscribe(unsubscribeUri, {
+        authenticatedFetch: authSession.fetch,
+      });
+    })
+  );
+  unsubscribeUris = [];
+  console.log("Unsubscribed from all");
   renderDashboard(res);
 });
 
