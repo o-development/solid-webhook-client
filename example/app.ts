@@ -1,4 +1,4 @@
-import { subscribe, unsubscribe } from "../src";
+import { subscribe, unsubscribe, verifyAuthIssuer } from "../lib";
 import path from "path";
 import express, { Request, Response } from "express";
 import {
@@ -74,7 +74,7 @@ app.get("/subscribe", async (req, res) => {
   const { unsubscribeEndpoint } = await subscribe(
     `${POD_ORIGIN}${RESOURCE_CONTAINER}`,
     `${LOCAL_ORIGIN}/webhook`,
-    { authenticatedFetch: authSession.fetch }
+    { fetch: authSession.fetch }
   );
   unsubscribeUris.push(unsubscribeEndpoint);
   console.log("Subscribed to Resource");
@@ -122,21 +122,12 @@ app.get("/unsubscribe", async (req, res) => {
 // When a change happens to the file, this route will be called
 app.post("/webhook", bodyParser.json(), async (req, res) => {
   console.log("Webhook request");
-  console.log(req.body);
-  // const parsedData = await parseIncomingRequest(req);
-
-  // /*
-  //   Logs:
-  //   {
-  //     object: "https://example.pod/resource1",
-  //     type: "update",
-  //     unsubscribeEndpoint: "https://example.pod/unsubscribe/e0f3fca0-cb35-4c20-8437-72f35"
-  //   }
-  // */
-  // console.log(parsedData);
-
-  // // Unsubscribe from the webhook
-  // await unsubscribe(parsedData.unsubscribeEndpoint);
+  if (await verifyAuthIssuer(req.headers.authorization) === POD_ORIGIN) {
+    console.log("Webhook valid");
+    console.log(req.body);
+  } else {
+    console.log("This issuer is invalid");
+  }
 
   res.sendStatus(200);
 });
