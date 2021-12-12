@@ -134,8 +134,6 @@ app.post("/webhook", bodyParser.json(), async (req, res) => {
 
 app.listen(3001, () => {
   console.info("Listening on 3001");
-  // Create the webhook subscription
-  // subscribe("https://example.pod/resource1");
 });
 
 function renderDashboard(res: Response): void {
