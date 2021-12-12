@@ -1,13 +1,12 @@
 {
   "name": "solid-webhook-client",
   "version": "0.0.0",
-  "type": "module",
   "description": "Webhook Client for Solid Servers",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
-    "test": "jest --coverage",
+    "test": "jest",
     "docs": "typedoc",
     "prepublishOnly": "npm run test && npm run build && npm run docs"
   },
