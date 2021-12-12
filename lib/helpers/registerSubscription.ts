@@ -1,5 +1,6 @@
 import { FetchFunction } from "./fetchFunction";
 import { GatewayResponse } from "./getGateway";
+import crossFetch from "cross-fetch";
 
 export interface SubscriptionResponse {
   type: string;
@@ -13,6 +14,7 @@ export async function registerSubscription(
   webhookTarget: string,
   options?: { fetch?: FetchFunction }
 ): Promise<SubscriptionResponse> {
+  const fetch = options?.fetch || crossFetch;
   const subscriptionResponse: SubscriptionResponse = await (
     await fetch(gatewayResponse.endpoint, {
       method: "post",
