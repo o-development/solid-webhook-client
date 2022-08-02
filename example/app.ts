@@ -77,7 +77,6 @@ app.get("/subscribe", async (req, res) => {
     { fetch: authSession.fetch }
   );
   unsubscribeUris.push(unsubscribeEndpoint);
-  console.log(unsubscribeEndpoint);
   console.log("Subscribed to Resource");
   renderDashboard(res);
 });
@@ -107,7 +106,6 @@ app.get("/delete", async (req, res) => {
 app.get("/unsubscribe", async (req, res) => {
   const authSession = await getAuthSession(req);
   console.log("Unsubscribe");
-  console.log(unsubscribeUris);
   await Promise.all(
     unsubscribeUris.map(async (unsubscribeUri) => {
       await unsubscribe(unsubscribeUri, {
