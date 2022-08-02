@@ -18,11 +18,11 @@ import bodyParser from "body-parser";
 
 const app = express();
 
-app.post("/webhook", bodyParser.json(), async (req, res) => {
+app.post("/webhook", bodyParser.json({ type: "application/ld+json" }), async (req, res) => {
   console.log("Webhook request");
-  if (await verifyAuthIssuer(req.headers.authorization) === POD_ORIGIN) {
+  if (await verifyAuthIssuer(req.headers.authorization) === "https://example.pod") {
     console.log("Webhook valid");
-    console.log(req.body);
+    console.log(JSON.parse(req.body));
   } else {
     console.log("This issuer is invalid");
   }

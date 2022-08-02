@@ -1,17 +1,22 @@
 import { FetchFunction } from "./fetchFunction";
 import { WellKnownDocument } from "./getWellKnownDocument";
 import crossFetch from "cross-fetch";
+import assert from "assert";
 
-export interface GatewayResponse {
+export interface NotificationChannel {
   type: string;
   endpoint: string;
   features: string[];
 }
 
-export async function getGateway(
+export interface GatewayResponse {
+  notificationChannel: NotificationChannel[];
+}
+
+export async function getNotificationChannel(
   wellKnownDocument: WellKnownDocument,
   options?: { fetch?: FetchFunction }
-): Promise<GatewayResponse> {
+): Promise<NotificationChannel> {
   const fetch = options?.fetch || crossFetch;
   const gatewayResponse: GatewayResponse = await (
     await fetch(wellKnownDocument.notification_endpoint, {
@@ -23,5 +28,18 @@ export async function getGateway(
       }),
     })
   ).json();
-  return gatewayResponse;
+  assert(
+    Array.isArray(gatewayResponse.notificationChannel),
+    "Invalide Gateway Response"
+  );
+  const notificationChannel = gatewayResponse.notificationChannel.find(
+    (channel) => {
+      return channel.type === "WebHookSubscription2021" && channel.endpoint;
+    }
+  );
+  assert(
+    notificationChannel,
+    "This Pod is not compatible with WebHookSubscription2021"
+  );
+  return notificationChannel;
 }

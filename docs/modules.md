@@ -33,7 +33,7 @@ Creates a webhook subscription
 
 #### Defined in
 
-[subscribe.ts:11](https://github.com/o-development/solid-webhook-client/blob/0340cba/lib/subscribe.ts#L11)
+[subscribe.ts:11](https://github.com/o-development/solid-webhook-client/blob/85440b2/lib/subscribe.ts#L11)
 
 ___
 
@@ -57,7 +57,7 @@ Unsubscribe from a resource
 
 #### Defined in
 
-[unsubscribe.ts:6](https://github.com/o-development/solid-webhook-client/blob/0340cba/lib/unsubscribe.ts#L6)
+[unsubscribe.ts:6](https://github.com/o-development/solid-webhook-client/blob/85440b2/lib/unsubscribe.ts#L6)
 
 ___
 
@@ -81,4 +81,4 @@ the issuer if the token is valid, undefined if it is not
 
 #### Defined in
 
-[verifyAuthIssuer.ts:12](https://github.com/o-development/solid-webhook-client/blob/0340cba/lib/verifyAuthIssuer.ts#L12)
+[verifyAuthIssuer.ts:12](https://github.com/o-development/solid-webhook-client/blob/85440b2/lib/verifyAuthIssuer.ts#L12)

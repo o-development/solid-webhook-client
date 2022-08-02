@@ -77,6 +77,7 @@ app.get("/subscribe", async (req, res) => {
     { fetch: authSession.fetch }
   );
   unsubscribeUris.push(unsubscribeEndpoint);
+  console.log(unsubscribeEndpoint);
   console.log("Subscribed to Resource");
   renderDashboard(res);
 });
@@ -120,17 +121,21 @@ app.get("/unsubscribe", async (req, res) => {
 });
 
 // When a change happens to the file, this route will be called
-app.post("/webhook", bodyParser.json(), async (req, res) => {
-  console.log("Webhook request");
-  if (await verifyAuthIssuer(req.headers.authorization) === POD_ORIGIN) {
-    console.log("Webhook valid");
-    console.log(req.body);
-  } else {
-    console.log("This issuer is invalid");
-  }
+app.post(
+  "/webhook",
+  bodyParser.json({ type: "application/ld+json" }),
+  async (req, res) => {
+    console.log("Webhook request");
+    if ((await verifyAuthIssuer(req.headers.authorization)) === POD_ORIGIN) {
+      console.log("Webhook valid");
+      console.log(req.body);
+    } else {
+      console.log("This issuer is invalid");
+    }
 
-  res.sendStatus(200);
-});
+    res.sendStatus(200);
+  }
+);
 
 app.listen(3001, () => {
   console.info("Listening on 3001");
